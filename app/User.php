@@ -9,20 +9,11 @@ class User extends Authenticatable
 {
     use Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'name', 'email', 'password',
     ];
 
-    /**
-     * The attributes that should be hidden for arrays.
-     *
-     * @var array
-     */
+    
     protected $hidden = [
         'password', 'remember_token',
     ];
@@ -56,12 +47,12 @@ class User extends Authenticatable
     }
 }
 
-public function unfollow($userId)
-{
-    // confirming if already following
-    $exist = $this->is_following($userId);
-    // confirming that it is not you
-    $its_me = $this->id == $userId;
+    public function unfollow($userId)
+    {
+        // confirming if already following
+        $exist = $this->is_following($userId);
+        // confirming that it is not you
+        $its_me = $this->id == $userId;
 
 
     if ($exist && !$its_me) {
@@ -83,4 +74,37 @@ public function unfollow($userId)
         $follow_user_ids[] = $this->id;
         return Micropost::whereIn('user_id', $follow_user_ids);
     }
+    
+    public function favorite()
+        {
+            return $this->belongsToMany(Micropost::class, 'favorite', 'user_id', 'micropost_id')->withTimestamps();
+        }
+        public function add_to_favorite($postId)
+    {
+        $exist = $this->is_added_to_favorite($postId);
+
+        if ($exist) {
+            return false;
+        } else {
+            $this->favorite()->attach($postId);
+        return true;
+        }
+    }
+
+    public function delete_from_favorite($postId)
+    {
+        $exist = $this->is_added_to_favorite($postId);
+
+        if ($exist) {
+            $this->favorite()->detach($postId);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function is_added_to_favorite($postId) {
+        return $this->favorite()->where('micropost_id', $postId)->exists();
+    }
+
 }
